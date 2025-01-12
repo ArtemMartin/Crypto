@@ -5,9 +5,7 @@ package com.mycompany.crypto;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.Iterator;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import javax.swing.JOptionPane;
 
 /**
  *
@@ -15,6 +13,19 @@ import java.util.regex.Pattern;
  */
 public class Crypto {
 
+    public static final char[] massCrypto = new char[]{'Д', 'Е', '$', 'д', 
+        'Ё', 'Ж', 'З', 'И', '%', 'Й', 'К', 'ш', 'щ', 'ъ', 'ы', 'е', 'ё', 'ж',
+        'П', 'Р', 'С', 'Т', 'и', ',', 'й', 'к', 'л', 'Ы',  'Л', 'М', 'Н', 'О',
+        'У', '5', '&', '6', '7', '(', '8', 'Ч', 'Ш', 'Щ', 'Ъ', '-', 'Ю', '\n',
+        'Ц', '4', ';', 'U', 'V', 'W', 'X', 'Y', 'Z', 'p', 'q', 'r', 's', 
+        'а', ' ', 'б', 'в', 'г', 'з', '@', 'м', 'н', 'о', 'п', 'В', 'Г', 'Э', '/',
+        'р', 'с', 'т', '*', 'у', 'ф', 'х', 'ц', 'ч', '#', 'ь', 'э', 'ю', 'я', ')',
+        '1', '2', '3', '.', '9', '0', ':', 'w', 'x', 'y', 'z', 't', 'u', 'v',
+        'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
+        'P', 'Q', 'R', 'S', 'T','Ь', 'А', 'Б', 'Ф', '!', 'Я', 'Х',
+        'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o'
+    };
+    public static int key;
     static String messageInput;
 
     public static void main(String[] args) {
@@ -25,7 +36,12 @@ public class Crypto {
             @Override
             public void actionPerformed(ActionEvent e) {
                 messageInput = frame.getAreaInput().getText();
-                frame.getAreaOutput().setText(getCryptoMessage(messageInput));
+                try {
+                    key = Integer.parseInt(frame.getTxtKey().getText());
+                    frame.getAreaOutput().setText(getCryptoMessage(messageInput));
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(null, "Ключ должен быть числом!");
+                }
             }
         });
         //слушаем Разкодировать
@@ -33,29 +49,33 @@ public class Crypto {
             @Override
             public void actionPerformed(ActionEvent e) {
                 messageInput = frame.getAreaInput().getText();
-                frame.getAreaOutput().setText(getDeCryptoMessage(messageInput));
+                try {
+                    key = Integer.parseInt(frame.getTxtKey().getText());
+                    frame.getAreaOutput().setText(getDeCryptoMessage(messageInput));
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(null, "Ключ должен быть числом!");
+                }
             }
         });
     }
 
     //разкодировать сообщение
     public static String getDeCryptoMessage(String message) {
-        String upper;
-        char[] masChar;
-        String str = "";
         String deCryptoMessage = "";
-        String[] listMessage = message.split("[ .,/\n=]");
-        for (String string : listMessage) {
-            upper = string.replaceAll("[^А-Я]+", "");
-            if (upper.length() == string.length()) {
-                masChar = upper.toCharArray();
-                for (char c : masChar) {
-                    str += getSimvolRazkodirovat(c);
+        char[] charMassMessage = message.toCharArray();
+        char c;
+        int pribavka;
+        for (int i = 0; i < charMassMessage.length; i++) {
+            c = charMassMessage[i];
+            for (int j = 0; j < massCrypto.length; j++) {
+                if (c == massCrypto[j]) {
+                    if (j - key < 0) {
+                        pribavka = Math.abs(j - key);
+                        deCryptoMessage += massCrypto[massCrypto.length - pribavka];
+                    } else {
+                        deCryptoMessage += massCrypto[j - key];
+                    }
                 }
-                deCryptoMessage += str + " ";
-                str = "";
-            } else {
-                deCryptoMessage += string + " ";
             }
         }
         return deCryptoMessage;
@@ -63,106 +83,23 @@ public class Crypto {
 
     //закодировать сообщение
     public static String getCryptoMessage(String message) {
-        String cryptoMessage;
-        String[] listMessage = message.split("[ .,/\n=]");
-        cryptoMessage = getCryptoMessage(listMessage);
+        String cryptoMessage = "";
+        char[] charMassMessage = message.toCharArray();
+        char c;
+        int pribavka;
+        for (int i = 0; i < charMassMessage.length; i++) {
+            c = charMassMessage[i];
+            for (int j = 0; j < massCrypto.length; j++) {
+                if (c == massCrypto[j]) {
+                    if (j + key > massCrypto.length - 1) {
+                        pribavka = j + key - (massCrypto.length);
+                        cryptoMessage += massCrypto[pribavka];
+                    } else {
+                        cryptoMessage += massCrypto[j + key];
+                    }
+                }
+            }
+        }
         return cryptoMessage;
-    }
-
-    //исчем цыфры
-    public static String getCryptoMessage(String[] strArr) {
-        Pattern pattern = Pattern.compile("\\d");//шаблон для поиска цыфр
-        Matcher matcher;
-        String str = "";
-        String strCrypto = "";
-        String c = null;
-        Integer val;
-        for (int i = 0; i < strArr.length; i++) {
-            matcher = pattern.matcher(strArr[i]);//Создаем объект Matcher для работы со строкой           
-            while (matcher.find()) {
-                c = matcher.group();
-                val = Integer.valueOf(c);
-                c = getSimvolZakodirovat(val);
-                str += c;
-            }
-            if (strArr[i].length() != str.length()) {
-                str = strArr[i];
-            }
-            strCrypto = strCrypto + str + " ";
-            str = "";
-        }
-        return strCrypto;
-    }
-
-    public static int getSimvolRazkodirovat(char a) {
-        switch (a) {
-            case 'Б' -> {
-                return 1;
-            }
-            case 'Ф' -> {
-                return 2;
-            }
-            case 'Р' -> {
-                return 3;
-            }
-            case 'А' -> {
-                return 4;
-            }
-            case 'П' -> {
-                return 5;
-            }
-            case 'С' -> {
-                return 6;
-            }
-            case 'Ж' -> {
-                return 7;
-            }
-            case 'Н' -> {
-                return 8;
-            }
-            case 'Е' -> {
-                return 9;
-            }
-            case 'Х' -> {
-                return 0;
-            }
-        }
-        return 0;
-    }
-
-    public static String getSimvolZakodirovat(int a) {
-        switch (a) {
-            case 1 -> {
-                return "Б";
-            }
-            case 2 -> {
-                return "Ф";
-            }
-            case 3 -> {
-                return "Р";
-            }
-            case 4 -> {
-                return "А";
-            }
-            case 5 -> {
-                return "П";
-            }
-            case 6 -> {
-                return "С";
-            }
-            case 7 -> {
-                return "Ж";
-            }
-            case 8 -> {
-                return "Н";
-            }
-            case 9 -> {
-                return "Е";
-            }
-            case 0 -> {
-                return "Х";
-            }
-        }
-        return "NULL";
     }
 }
